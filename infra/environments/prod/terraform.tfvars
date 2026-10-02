@@ -1,4 +1,4 @@
-owner = "dhruvansh"
+owner = "rahul"
 
 # ---------- Resource groups ----------
 resource_groups = {
@@ -106,5 +106,40 @@ peerings = {
     hub_key         = "hub"
     spoke_key       = "spoke"
     use_hub_gateway = false # set to true on Day 3 after the VPN gateway exists
+  }
+}
+
+
+# ---------- Governance: Azure Policy ----------
+policy_assignments = {
+  allowed-locations = {
+    display_name         = "Nimbus: allowed locations (Central and South India)"
+    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c"
+    parameters = {
+      listOfAllowedLocations = ["centralindia", "southindia"]
+    }
+  }
+
+  allowed-vm-sizes = {
+    display_name         = "Nimbus: allowed VM sizes (cost guardrail)"
+    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/cccc23c7-8427-4f53-ad12-b6a63eb452b3"
+    parameters = {
+      listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms"]
+    }
+  }
+
+  require-rg-tags = {
+    display_name          = "Nimbus: resource groups must have project, owner, environment tags"
+    custom_definition_key = "require-rg-tags"
+  }
+}
+
+# ---------- Cost: budget alerts ----------
+alert_emails = ["rahulraval870@gmail.com"] # replace with your real email
+
+budgets = {
+  budget-nimbus-monthly = {
+    amount     = 8000 # in your billing currency (INR for an Indian trial account)
+    start_date = "2026-10-01T00:00:00Z"
   }
 }

@@ -1,0 +1,20 @@
+{
+  "if": {
+    "allOf": [
+      {
+        "field": "type",
+        "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+      },
+      {
+        "anyOf": [
+          { "field": "tags['project']", "exists": "false" },
+          { "field": "tags['owner']", "exists": "false" },
+          { "field": "tags['environment']", "exists": "false" }
+        ]
+      }
+    ]
+  },
+  "then": {
+    "effect": "audit"
+  }
+}

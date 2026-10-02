@@ -9,3 +9,8 @@ output "vnet_ids" {
 output "subnet_ids" {
   value = module.network.subnet_ids
 }
+
+
+output "policy_assignment_ids" {
+  value = module.policy.assignment_ids
+}
