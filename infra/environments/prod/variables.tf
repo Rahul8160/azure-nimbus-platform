@@ -21,3 +21,14 @@ variable "resource_groups" {
     tags     = optional(map(string), {})
   }))
 }
+
+variable "vnets" {
+  description = "VNets. resource_group_key points to an entry in resource_groups. Full type is enforced by the network module."
+  type        = any
+}
+
+variable "peerings" {
+  description = "Hub-spoke peerings"
+  type        = any
+  default     = {}
+}
