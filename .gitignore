@@ -1,0 +1,17 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+secrets.auto.tfvars
+
+# Python
+__pycache__/
+.venv/
+.env
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.DS_Store
