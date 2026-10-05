@@ -104,7 +104,7 @@ module "sql" {
       resource_group_name   = module.resource_groups.names[v.resource_group_key]
       location              = module.resource_groups.locations[v.resource_group_key]
       tenant_id             = data.azurerm_client_config.current.tenant_id
-      entra_admin_object_id = data.azurerm_client_config.current.object_id # you are the SQL admin
+      entra_admin_object_id = module.vm.principal_ids["jumpbox"] # SQL admin work happens on the jumpbox
     })
   }
   tags = local.common_tags
@@ -170,7 +170,8 @@ module "aks" {
       subnet_id           = module.network.subnet_ids[v.subnet_key]
       acr_id              = module.acr.ids[v.acr_key]
       tenant_id           = data.azurerm_client_config.current.tenant_id
-      admin_object_ids    = [data.azurerm_client_config.current.object_id]
+      admin_object_ids    = [data.azurerm_client_config.current.object_id, module.vm.principal_ids["jumpbox"]]
+      dns_link_vnet_ids   = { for vk in try(v.dns_link_vnet_keys, []) : vk => module.network.vnet_ids[vk] }
     })
   }
   tags = local.common_tags
@@ -213,6 +214,35 @@ module "workload_identity" {
         }
       }
     }
+  }
+  tags = local.common_tags
+}
+
+
+module "bastion" {
+  source = "../../modules/bastion"
+
+  bastions = {
+    for k, v in var.bastions : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      virtual_network_id  = module.network.vnet_ids[v.vnet_key]
+    })
+  }
+  tags = local.common_tags
+}
+
+module "vm" {
+  source = "../../modules/vm"
+
+  vms = {
+    for k, v in var.virtual_machines : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      subnet_id           = module.network.subnet_ids[v.subnet_key]
+      ssh_public_key      = file(pathexpand(v.ssh_public_key_path)) # reads ~/.ssh/nimbus_jumpbox.pub
+      custom_data         = try(file("${path.module}/${v.cloud_init_file}"), null)
+    })
   }
   tags = local.common_tags
 }

@@ -10,6 +10,7 @@ variable "vnets" {
       address_prefixes                  = list(string)
       private_endpoint_network_policies = optional(string, "Disabled")
       create_nsg                        = optional(bool, false)
+      default_outbound_access_enabled   = optional(bool) # null = provider default
 
       nsg_rules = optional(map(object({
         priority                   = number

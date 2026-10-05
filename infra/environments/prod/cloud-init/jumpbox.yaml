@@ -1,0 +1,23 @@
+#cloud-config
+# Runs once, on the jumpbox's first boot: installs the admin tools.
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - jq
+  - dnsutils
+  - bzip2
+
+runcmd:
+  # Azure CLI
+  - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+  # kubectl + kubelogin (needed for Entra ID login to AKS)
+  - az aks install-cli
+  # Helm
+  - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  # sqlcmd (Microsoft's Go-based SQL client)
+  - curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+  - curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list -o /etc/apt/sources.list.d/microsoft-prod.list
+  - apt-get update
+  - apt-get install -y sqlcmd

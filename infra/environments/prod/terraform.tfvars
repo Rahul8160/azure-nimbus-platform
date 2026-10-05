@@ -33,8 +33,9 @@ vnets = {
       GatewaySubnet                 = { address_prefixes = ["10.0.0.128/27"] }
 
       snet-jumpbox = {
-        address_prefixes = ["10.0.1.0/27"]
-        create_nsg       = true
+        address_prefixes                = ["10.0.1.0/27"]
+        create_nsg                      = true
+        default_outbound_access_enabled = true # lab: jumpbox downloads its tools; production uses NAT Gateway or the firewall
         nsg_rules = {
           # Bastion Developer connects from Azure's platform IP
           allow-bastion-ssh = {
@@ -124,7 +125,7 @@ policy_assignments = {
     display_name         = "Nimbus: allowed VM sizes (cost guardrail)"
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/cccc23c7-8427-4f53-ad12-b6a63eb452b3"
     parameters = {
-      listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2"]
+        listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2", "Standard_B2ls_v2"]
     }
   }
 
@@ -202,7 +203,7 @@ sql_servers = {
   main = {
     name               = "sql-nimbus-f786969" # globally unique, lowercase
     resource_group_key = "workload"
-    entra_admin_login  = "nimbus-sql-admin"
+    entra_admin_login  = "vm-jumpbox-nimbus-cin"
     databases = {
       ordersdb = {
         sku_name    = "Basic"
@@ -258,6 +259,7 @@ aks_clusters = {
     acr_key             = "main"
     node_vm_size        = "Standard_B2s_v2"
     node_count          = 1
+    dns_link_vnet_keys  = ["hub"] # jumpbox and VPN live in the hub
   }
 }
 
@@ -297,5 +299,27 @@ workload_identities = {
         role_definition = "00000000-0000-0000-0000-000000000002" # Cosmos DB Built-in Data Contributor
       }
     }
+  }
+}
+
+
+# ---------- Admin access ----------
+bastions = {
+  hub = {
+    name               = "bas-nimbus-hub-cin"
+    resource_group_key = "hub"
+    vnet_key           = "hub"
+    sku                = "Developer"
+  }
+}
+
+virtual_machines = {
+  jumpbox = {
+    name                = "vm-jumpbox-nimbus-cin"
+    resource_group_key  = "hub"
+    subnet_key          = "hub/snet-jumpbox"
+    size                = "Standard_B2ls_v2"
+    ssh_public_key_path = "~/.ssh/nimbus_jumpbox.pub"
+    cloud_init_file     = "cloud-init/jumpbox.yaml"
   }
 }

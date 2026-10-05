@@ -62,3 +62,13 @@ output "workload_identity_client_ids" {
 output "workload_identity_names" {
   value = module.workload_identity.names
 }
+
+
+output "jumpbox_private_ips" {
+  value = module.vm.private_ips
+}
+
+output "workload_identity_principal_ids" {
+  description = "Object IDs: used to create the SQL users"
+  value       = module.workload_identity.principal_ids
+}

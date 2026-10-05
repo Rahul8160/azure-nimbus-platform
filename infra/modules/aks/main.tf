@@ -9,6 +9,18 @@ locals {
       }
     }
   ]...)
+
+  # One DNS link per (cluster, extra VNet). Key example: "main/hub"
+  api_dns_links = merge([
+    for cluster_key, cluster in var.clusters : {
+      for vnet_key, vnet_id in cluster.dns_link_vnet_ids :
+      "${cluster_key}/${vnet_key}" => {
+        cluster_key = cluster_key
+        vnet_key    = vnet_key
+        vnet_id     = vnet_id
+      }
+    }
+  ]...)
 }
 
 # ---------- 1. Control-plane identity, created BEFORE the cluster ----------
@@ -115,5 +127,37 @@ resource "azurerm_role_assignment" "cluster_admin" {
 
   scope                = azurerm_kubernetes_cluster.cluster[each.value.cluster_key].id
   role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+  principal_id         = each.value.object_id
+}
+
+
+# ---------- 5. Let other VNets (e.g. the hub) resolve the private API server ----------
+# AKS's private FQDN looks like: <prefix>-<hash>.<guid>.privatelink.<region>.azmk8s.io
+# The private DNS zone is everything after the first dot, inside the AKS node resource group.
+resource "azurerm_private_dns_zone_virtual_network_link" "api_server" {
+  for_each = local.api_dns_links
+
+  name = "link-${each.value.vnet_key}"
+  private_dns_zone_id = format(
+    "%s/providers/Microsoft.Network/privateDnsZones/%s",
+    azurerm_kubernetes_cluster.cluster[each.value.cluster_key].node_resource_group_id,
+    join(".", slice(
+      split(".", azurerm_kubernetes_cluster.cluster[each.value.cluster_key].private_fqdn),
+      1,
+      length(split(".", azurerm_kubernetes_cluster.cluster[each.value.cluster_key].private_fqdn))
+    ))
+  )
+  virtual_network_id   = each.value.vnet_id
+  registration_enabled = false
+}
+
+
+
+# ---------- 6. Admins may download cluster credentials (az aks get-credentials) ----------
+resource "azurerm_role_assignment" "cluster_user" {
+  for_each = local.cluster_admins
+
+  scope                = azurerm_kubernetes_cluster.cluster[each.value.cluster_key].id
+  role_definition_name = "Azure Kubernetes Service Cluster User Role"
   principal_id         = each.value.object_id
 }

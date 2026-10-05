@@ -9,7 +9,8 @@ variable "clusters" {
     subnet_id           = string # node subnet
     acr_id              = string # registry the nodes pull images from
     tenant_id           = string
-    admin_object_ids    = list(string) # get "AKS RBAC Cluster Admin"
+    admin_object_ids    = list(string)              # get "AKS RBAC Cluster Admin"
+    dns_link_vnet_ids   = optional(map(string), {}) # extra VNets that must resolve the private API server
 
     kubernetes_version = optional(string) # null = latest stable version
     node_vm_size       = optional(string, "Standard_B2s_v2")

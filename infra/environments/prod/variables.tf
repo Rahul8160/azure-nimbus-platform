@@ -104,3 +104,14 @@ variable "workload_identities" {
   type    = any
   default = {}
 }
+
+
+variable "bastions" {
+  type    = any
+  default = {}
+}
+
+variable "virtual_machines" {
+  type    = any
+  default = {}
+}

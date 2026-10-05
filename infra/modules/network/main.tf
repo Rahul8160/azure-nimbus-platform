@@ -47,6 +47,7 @@ resource "azurerm_subnet" "this" {
   virtual_network_name              = azurerm_virtual_network.this[each.value.vnet_key].name
   address_prefixes                  = each.value.address_prefixes
   private_endpoint_network_policies = each.value.private_endpoint_network_policies
+  default_outbound_access_enabled   = each.value.default_outbound_access_enabled
 }
 
 # ---------- NSGs (one per subnet that asked for it) ----------
