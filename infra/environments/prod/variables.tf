@@ -98,3 +98,9 @@ variable "aks_clusters" {
   type    = any
   default = {}
 }
+
+
+variable "workload_identities" {
+  type    = any
+  default = {}
+}

@@ -75,7 +75,7 @@ resource "azurerm_kubernetes_cluster" "cluster" {
       max_surge = "10%"
     }
   }
-    # How node pools are managed: Manual = we define them ourselves (default_node_pool above)
+  # How node pools are managed: Manual = we define them ourselves (default_node_pool above)
   node_provisioning_profile {
     mode = "Manual"
   }

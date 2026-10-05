@@ -53,3 +53,12 @@ output "aks_oidc_issuer_urls" {
 output "aks_private_fqdns" {
   value = module.aks.private_fqdns
 }
+
+
+output "workload_identity_client_ids" {
+  value = module.workload_identity.client_ids
+}
+
+output "workload_identity_names" {
+  value = module.workload_identity.names
+}

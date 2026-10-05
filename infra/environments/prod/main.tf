@@ -175,3 +175,44 @@ module "aks" {
   }
   tags = local.common_tags
 }
+
+
+locals {
+  # Things an Azure role can be scoped to, by "<type>/<key>"
+  role_targets = merge(
+    { for k, id in module.service_bus.queue_ids : "servicebus_queue/${k}" => id },
+    { for k, id in module.key_vault.ids : "keyvault/${k}" => id },
+  )
+}
+
+module "workload_identity" {
+  source = "../../modules/workload_identity"
+
+  identities = {
+    for k, v in var.workload_identities : k => {
+      name                = "id-${k}-nimbus-cin"
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      oidc_issuer_url     = module.aks.oidc_issuer_urls[v.aks_key]
+      namespace           = v.namespace
+      service_account     = v.service_account
+
+      azure_roles = {
+        for rk, r in try(v.azure_roles, {}) : rk => {
+          scope = local.role_targets[r.target]
+          role  = r.role
+        }
+      }
+
+      cosmos_roles = {
+        for rk, r in try(v.cosmos_roles, {}) : rk => {
+          account_name        = module.cosmos.account_names[r.account]
+          resource_group_name = module.cosmos.resource_group_names[r.account]
+          scope               = "${module.cosmos.account_ids[r.account]}${r.path}"
+          role_definition_id  = "${module.cosmos.account_ids[r.account]}/sqlRoleDefinitions/${r.role_definition}"
+        }
+      }
+    }
+  }
+  tags = local.common_tags
+}

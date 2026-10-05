@@ -124,7 +124,7 @@ policy_assignments = {
     display_name         = "Nimbus: allowed VM sizes (cost guardrail)"
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/cccc23c7-8427-4f53-ad12-b6a63eb452b3"
     parameters = {
-        listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2"]
+      listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2"]
     }
   }
 
@@ -258,5 +258,44 @@ aks_clusters = {
     acr_key             = "main"
     node_vm_size        = "Standard_B2s_v2"
     node_count          = 1
+  }
+}
+
+
+
+# ---------- Workload identities (one per microservice, least privilege) ----------
+workload_identities = {
+  orders = {
+    resource_group_key = "workload"
+    aks_key            = "main"
+    namespace          = "nimbus"
+    service_account    = "orders-service"
+    azure_roles = {
+      servicebus-send = {
+        target = "servicebus_queue/main/order-placed"
+        role   = "Azure Service Bus Data Sender"
+      }
+    }
+    # SQL access is granted inside the database in Step 3
+  }
+
+  inventory = {
+    resource_group_key = "workload"
+    aks_key            = "main"
+    namespace          = "nimbus"
+    service_account    = "inventory-service"
+    azure_roles = {
+      servicebus-receive = {
+        target = "servicebus_queue/main/order-placed"
+        role   = "Azure Service Bus Data Receiver"
+      }
+    }
+    cosmos_roles = {
+      inventory-data = {
+        account         = "main"
+        path            = "/dbs/nimbus/colls/inventory"          # only this container
+        role_definition = "00000000-0000-0000-0000-000000000002" # Cosmos DB Built-in Data Contributor
+      }
+    }
   }
 }
