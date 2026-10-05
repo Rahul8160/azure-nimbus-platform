@@ -76,3 +76,19 @@ variable "private_endpoints" {
   type    = any
   default = {}
 }
+
+
+variable "sql_servers" {
+  type    = any
+  default = {}
+}
+
+variable "cosmos_accounts" {
+  type    = any
+  default = {}
+}
+
+variable "servicebus_namespaces" {
+  type    = any
+  default = {}
+}

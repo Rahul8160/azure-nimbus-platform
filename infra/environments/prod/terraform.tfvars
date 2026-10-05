@@ -180,4 +180,67 @@ private_endpoints = {
     subresource_names  = ["vault"]
     dns_zone_key       = "keyvault"
   }
+  sql-main = {
+    resource_group_key = "workload"
+    subnet_key         = "spoke/snet-pe"
+    target             = "sql/main"
+    subresource_names  = ["sqlServer"]
+    dns_zone_key       = "sql"
+  }
+  cosmos-main = {
+    resource_group_key = "workload"
+    subnet_key         = "spoke/snet-pe"
+    target             = "cosmos/main"
+    subresource_names  = ["Sql"] # "Sql" = the NoSQL API endpoint of Cosmos DB
+    dns_zone_key       = "cosmos"
+  }
+}
+
+
+# ---------- Data ----------
+sql_servers = {
+  main = {
+    name               = "sql-nimbus-f786969" # globally unique, lowercase
+    resource_group_key = "workload"
+    entra_admin_login  = "nimbus-sql-admin"
+    databases = {
+      ordersdb = {
+        sku_name    = "Basic"
+        max_size_gb = 2
+      }
+    }
+  }
+}
+
+cosmos_accounts = {
+  main = {
+    name               = "cosmos-nimbus-f786969" # globally unique, lowercase
+    resource_group_key = "workload"
+    databases = {
+      nimbus = {
+        containers = {
+          inventory = {
+            partition_key_path = "/id"
+            throughput         = 400
+          }
+        }
+      }
+    }
+  }
+}
+
+# ---------- Messaging ----------
+servicebus_namespaces = {
+  main = {
+    name               = "sb-nimbus-f786969" # globally unique
+    resource_group_key = "workload"
+    sku                = "Basic"
+    queues = {
+      order-placed = {
+        max_delivery_count  = 3
+        lock_duration       = "PT1M"
+        default_message_ttl = "PT1H"
+      }
+    }
+  }
 }

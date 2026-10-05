@@ -95,11 +95,51 @@ module "key_vault" {
   tags = local.common_tags
 }
 
+
+module "sql" {
+  source = "../../modules/sql"
+
+  servers = {
+    for k, v in var.sql_servers : k => merge(v, {
+      resource_group_name   = module.resource_groups.names[v.resource_group_key]
+      location              = module.resource_groups.locations[v.resource_group_key]
+      tenant_id             = data.azurerm_client_config.current.tenant_id
+      entra_admin_object_id = data.azurerm_client_config.current.object_id # you are the SQL admin
+    })
+  }
+  tags = local.common_tags
+}
+
+module "cosmos" {
+  source = "../../modules/cosmos"
+
+  accounts = {
+    for k, v in var.cosmos_accounts : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+    })
+  }
+  tags = local.common_tags
+}
+
+module "service_bus" {
+  source = "../../modules/service_bus"
+
+  namespaces = {
+    for k, v in var.servicebus_namespaces : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+    })
+  }
+  tags = local.common_tags
+}
+
 locals {
-  # Everything a private endpoint can point at, by "<type>/<key>".
-  # Step 3b adds SQL and Cosmos DB here.
+  # Everything a private endpoint can point at, by "<type>/<key>"
   private_endpoint_targets = merge(
     { for k, id in module.key_vault.ids : "keyvault/${k}" => id },
+    { for k, id in module.sql.server_ids : "sql/${k}" => id },
+    { for k, id in module.cosmos.account_ids : "cosmos/${k}" => id },
   )
 }
 

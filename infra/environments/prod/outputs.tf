@@ -27,3 +27,16 @@ output "key_vault_uris" {
 output "private_endpoint_ips" {
   value = module.private_endpoints.private_ips
 }
+
+
+output "sql_server_fqdns" {
+  value = module.sql.server_fqdns
+}
+
+output "cosmos_endpoints" {
+  value = module.cosmos.endpoints
+}
+
+output "servicebus_namespace_fqdns" {
+  value = module.service_bus.namespace_fqdns
+}
