@@ -40,3 +40,16 @@ output "cosmos_endpoints" {
 output "servicebus_namespace_fqdns" {
   value = module.service_bus.namespace_fqdns
 }
+
+
+output "aks_cluster_names" {
+  value = module.aks.cluster_names
+}
+
+output "aks_oidc_issuer_urls" {
+  value = module.aks.oidc_issuer_urls
+}
+
+output "aks_private_fqdns" {
+  value = module.aks.private_fqdns
+}

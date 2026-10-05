@@ -124,7 +124,7 @@ policy_assignments = {
     display_name         = "Nimbus: allowed VM sizes (cost guardrail)"
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/cccc23c7-8427-4f53-ad12-b6a63eb452b3"
     parameters = {
-      listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms"]
+        listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2"]
     }
   }
 
@@ -242,5 +242,21 @@ servicebus_namespaces = {
         default_message_ttl = "PT1H"
       }
     }
+  }
+}
+
+
+
+# ---------- Kubernetes ----------
+aks_clusters = {
+  main = {
+    name                = "aks-nimbus-cin"
+    dns_prefix          = "aks-nimbus"
+    node_resource_group = "rg-nimbus-aks-nodes-cin" # AKS creates and manages this group
+    resource_group_key  = "workload"
+    subnet_key          = "spoke/snet-aks"
+    acr_key             = "main"
+    node_vm_size        = "Standard_B2s_v2"
+    node_count          = 1
   }
 }

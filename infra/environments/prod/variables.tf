@@ -92,3 +92,9 @@ variable "servicebus_namespaces" {
   type    = any
   default = {}
 }
+
+
+variable "aks_clusters" {
+  type    = any
+  default = {}
+}

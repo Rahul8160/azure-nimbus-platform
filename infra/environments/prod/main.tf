@@ -158,3 +158,20 @@ module "private_endpoints" {
   }
   tags = local.common_tags
 }
+
+
+module "aks" {
+  source = "../../modules/aks"
+
+  clusters = {
+    for k, v in var.aks_clusters : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      subnet_id           = module.network.subnet_ids[v.subnet_key]
+      acr_id              = module.acr.ids[v.acr_key]
+      tenant_id           = data.azurerm_client_config.current.tenant_id
+      admin_object_ids    = [data.azurerm_client_config.current.object_id]
+    })
+  }
+  tags = local.common_tags
+}
