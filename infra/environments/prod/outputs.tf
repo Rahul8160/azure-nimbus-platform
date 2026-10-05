@@ -14,3 +14,16 @@ output "subnet_ids" {
 output "policy_assignment_ids" {
   value = module.policy.assignment_ids
 }
+
+
+output "acr_login_servers" {
+  value = module.acr.login_servers
+}
+
+output "key_vault_uris" {
+  value = module.key_vault.uris
+}
+
+output "private_endpoint_ips" {
+  value = module.private_endpoints.private_ips
+}

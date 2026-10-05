@@ -143,3 +143,41 @@ budgets = {
     start_date = "2026-10-01T00:00:00Z"
   }
 }
+
+
+# ---------- Access ----------
+admin_ip_ranges = ["152.59.0.0/16"] # your home public IP; /32 means exactly one address
+
+# ---------- Private DNS (central, in the hub) ----------
+private_dns_zones = {
+  keyvault = "privatelink.vaultcore.azure.net"
+  sql      = "privatelink.database.windows.net"
+  cosmos   = "privatelink.documents.azure.com"
+}
+
+# ---------- Shared services ----------
+container_registries = {
+  main = {
+    name               = "acrnimbusf78654" # globally unique, letters and numbers only
+    resource_group_key = "shared"
+    sku                = "Basic"
+  }
+}
+
+key_vaults = {
+  main = {
+    name               = "kv-nimbus-f786969" # globally unique, 3-24 characters
+    resource_group_key = "shared"
+  }
+}
+
+# ---------- Private endpoints (all in the spoke's snet-pe) ----------
+private_endpoints = {
+  kv-main = {
+    resource_group_key = "workload"
+    subnet_key         = "spoke/snet-pe"
+    target             = "keyvault/main"
+    subresource_names  = ["vault"]
+    dns_zone_key       = "keyvault"
+  }
+}

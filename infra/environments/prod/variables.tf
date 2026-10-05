@@ -50,3 +50,29 @@ variable "alert_emails" {
   description = "Emails for budget alerts"
   type        = list(string)
 }
+
+
+variable "admin_ip_ranges" {
+  description = "Your public IP(s) in CIDR form, allowed through the Key Vault firewall"
+  type        = list(string)
+}
+
+variable "private_dns_zones" {
+  type    = map(string)
+  default = {}
+}
+
+variable "container_registries" {
+  type    = any
+  default = {}
+}
+
+variable "key_vaults" {
+  type    = any
+  default = {}
+}
+
+variable "private_endpoints" {
+  type    = any
+  default = {}
+}
