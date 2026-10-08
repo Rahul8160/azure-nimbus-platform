@@ -75,6 +75,7 @@ module "acr" {
     for k, v in var.container_registries : k => merge(v, {
       resource_group_name = module.resource_groups.names[v.resource_group_key]
       location            = module.resource_groups.locations[v.resource_group_key]
+      push_principal_ids  = [data.azurerm_client_config.current.object_id] # you, for manual pushes
     })
   }
   tags = local.common_tags

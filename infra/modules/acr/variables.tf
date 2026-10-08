@@ -5,6 +5,7 @@ variable "registries" {
     resource_group_name = string
     location            = string
     sku                 = optional(string, "Basic")
+    push_principal_ids  = optional(list(string), []) # identities allowed to push images
   }))
 }
 
