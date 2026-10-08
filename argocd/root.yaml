@@ -1,0 +1,19 @@
+# App of apps: creates every Application defined in argocd/apps/
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://dev.azure.com/rahulraval/nimbus/_git/nimbus
+    targetRevision: main
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc # this same cluster
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,31 @@
+# Ingress controller, installed by Argo CD from the public Traefik Helm chart
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 41.7.0 # pinned chart version
+    helm:
+      valuesObject:
+        ingressClass:
+          enabled: true
+          isDefaultClass: false
+          name: traefik # matches ingress.className in our chart
+        service:
+          spec:
+            externalTrafficPolicy: Local # keep the real client IP (needed for IP allow-lists in 4c-3)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # Traefik's CRDs are too large for the default apply method
