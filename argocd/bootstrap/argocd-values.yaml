@@ -1,0 +1,19 @@
+# Argo CD settings for a single small node.
+configs:
+  params:
+    # TLS will be handled by the ingress (Traefik) in 4c-3, so Argo CD serves plain HTTP inside the cluster
+    server.insecure: true
+
+# Not needed here: SSO connector and Slack/email notifications
+dex:
+  enabled: false
+notifications:
+  enabled: false
+
+# One replica of everything (small cluster)
+controller:
+  replicas: 1
+server:
+  replicas: 1
+repoServer:
+  replicas: 1
