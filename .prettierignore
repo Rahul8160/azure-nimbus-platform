@@ -1,0 +1,2 @@
+# Helm templates use {{ }} syntax that Prettier breaks
+helm/

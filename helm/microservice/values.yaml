@@ -1,0 +1,47 @@
+# Required per service
+name: "" # e.g. orders-service (also the Service/Deployment name)
+
+replicaCount: 1
+
+image:
+  repository: "" # e.g. acrnimbusf78654.azurecr.io/orders-service
+  tag: "" # git commit ID, always quoted
+  pullPolicy: IfNotPresent
+
+containerPort: 8000
+
+service:
+  port: 80
+
+serviceAccount:
+  name: "" # defaults to `name`; must match the federated credential subject
+
+workloadIdentity:
+  clientId: "" # client ID of the service's Azure managed identity
+
+# Plain environment variables (no secrets: auth is via workload identity)
+env: {}
+
+probes:
+  livenessPath: /health # is the process alive?
+  readinessPath: /ready # can it reach its database?
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: false
+  className: traefik
+  host: "" # empty = any host
+  path: /

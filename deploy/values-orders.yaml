@@ -1,0 +1,23 @@
+name: orders-service
+
+image:
+  repository: acrnimbusf78654.azurecr.io/orders-service
+  tag: "e47af54" # updated by the pipeline on Day 4
+
+workloadIdentity:
+  clientId: "39836b7a-3623-4576-86a0-fef514dd3bb0" # id-orders-nimbus-cin
+
+env:
+  SQL_SERVER: sql-nimbus-f786969.database.windows.net
+  SQL_DATABASE: ordersdb
+  SERVICEBUS_NAMESPACE: sb-nimbus-f786969.servicebus.windows.net
+  SERVICEBUS_QUEUE: order-placed
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+
+ingress:
+  enabled: true
+  path: /orders

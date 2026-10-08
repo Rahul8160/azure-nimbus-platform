@@ -1,0 +1,24 @@
+name: inventory-service
+
+image:
+  repository: acrnimbusf78654.azurecr.io/inventory-service
+  tag: "e47af54" # updated by the pipeline on Day 4
+
+workloadIdentity:
+  clientId: "c06b1f54-2791-4487-8dcd-1068f7485ccf" # id-inventory-nimbus-cin
+
+env:
+  COSMOS_ENDPOINT: https://cosmos-nimbus-f786969.documents.azure.com:443/
+  COSMOS_DATABASE: nimbus
+  COSMOS_CONTAINER: inventory
+  SERVICEBUS_NAMESPACE: sb-nimbus-f786969.servicebus.windows.net
+  SERVICEBUS_QUEUE: order-placed
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+
+ingress:
+  enabled: true
+  path: /inventory
