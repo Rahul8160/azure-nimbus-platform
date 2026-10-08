@@ -147,7 +147,7 @@ budgets = {
 
 
 # ---------- Access ----------
-admin_ip_ranges = ["152.59.0.0/16"] # your home public IP; /32 means exactly one address
+admin_ip_ranges = ["152.58.0.0/15"] # your home public IP; /32 means exactly one address
 
 # ---------- Private DNS (central, in the hub) ----------
 private_dns_zones = {
