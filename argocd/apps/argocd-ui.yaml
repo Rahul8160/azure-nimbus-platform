@@ -1,0 +1,19 @@
+# Exposes the Argo CD UI through Traefik, restricted by source IP
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ui
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://dev.azure.com/rahulraval/nimbus/_git/nimbus
+    targetRevision: main
+    path: argocd/manifests/argocd-ui # plain Kubernetes YAML, no Helm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

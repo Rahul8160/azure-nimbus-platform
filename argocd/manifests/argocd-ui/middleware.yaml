@@ -1,0 +1,10 @@
+# Traefik middleware: only these source IP ranges may pass
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: admin-allowlist
+  namespace: argocd
+spec:
+  ipAllowList:
+    sourceRange:
+      - 152.59.0.0/16 # your ISP range (CGNAT); same range as the Key Vault firewall

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ui
+  namespace: argocd
+  annotations:
+    # Format: <namespace>-<middleware name>@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: argocd-admin-allowlist@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: argocd.98.70.238.16.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  name: http
