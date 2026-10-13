@@ -66,12 +66,13 @@ stages:
               pip install -q checkov
               helm template orders helm/microservice -f deploy/values-orders.yaml > $(Agent.TempDirectory)/orders.yaml
               checkov -f $(Agent.TempDirectory)/orders.yaml --framework kubernetes --soft-fail \
-                -o cli -o junitxml --output-file-path console,$(Agent.TempDirectory)/checkov
+                -o cli -o junitxml \
+                --output-file-path console,$(Agent.TempDirectory)/checkov-kubernetes.xml
             displayName: Checkov on rendered manifests (report only)
           - task: PublishTestResults@2
             condition: succeededOrFailed()
             inputs:
-              testResultsFiles: $(Agent.TempDirectory)/checkov/results_junitxml.xml
+              testResultsFiles: $(Agent.TempDirectory)/checkov-kubernetes.xml
               testRunTitle: Checkov - Kubernetes
 
   # ---------------- Build & scan ----------------

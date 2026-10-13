@@ -44,12 +44,13 @@ stages:
           - script: |
               pip install -q checkov
               checkov -d infra --framework terraform --soft-fail \
-                -o cli -o junitxml --output-file-path console,$(Agent.TempDirectory)/checkov
+                -o cli -o junitxml \
+                --output-file-path console,$(Agent.TempDirectory)/checkov-terraform.xml
             displayName: Checkov (report only)
           - task: PublishTestResults@2
             condition: succeededOrFailed()
             inputs:
-              testResultsFiles: $(Agent.TempDirectory)/checkov/results_junitxml.xml
+              testResultsFiles: $(Agent.TempDirectory)/checkov-terraform.xml
               testRunTitle: Checkov - Terraform
 
   # ---------------- Plan & Apply ----------------
