@@ -125,7 +125,7 @@ policy_assignments = {
     display_name         = "Nimbus: allowed VM sizes (cost guardrail)"
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/cccc23c7-8427-4f53-ad12-b6a63eb452b3"
     parameters = {
-        listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2", "Standard_B2ls_v2"]
+      listOfAllowedSKUs = ["Standard_B1s", "Standard_B2s", "Standard_B2ms", "Standard_B2s_v2", "Standard_B2ls_v2"]
     }
   }
 
@@ -321,5 +321,54 @@ virtual_machines = {
     size                = "Standard_B2ls_v2"
     ssh_public_key_path = "~/.ssh/nimbus_jumpbox.pub"
     cloud_init_file     = "cloud-init/jumpbox.yaml"
+  }
+}
+
+
+# ---------- Azure Firewall (off by default: set true for a test session) ----------
+enable_firewall = false
+
+firewalls = {
+  hub = {
+    name               = "afw-nimbus-hub-cin"
+    resource_group_key = "hub"
+    vnet_key           = "hub"
+    sku_tier           = "Basic"
+
+    application_rule_collections = {
+      allow-admin-tooling = {
+        priority = 100
+        rules = {
+          os-packages = {
+            source_addresses  = ["10.0.1.0/27"] # snet-jumpbox
+            destination_fqdns = ["*.ubuntu.com", "packages.microsoft.com"]
+            protocols         = { Http = 80, Https = 443 }
+          }
+          azure-control-plane = {
+            source_addresses  = ["10.0.1.0/27"]
+            destination_fqdns = ["management.azure.com", "login.microsoftonline.com", "*.azmk8s.io", "aka.ms"]
+          }
+          tool-downloads = {
+            source_addresses  = ["10.0.1.0/27"]
+            destination_fqdns = ["get.helm.sh", "github.com", "objects.githubusercontent.com", "raw.githubusercontent.com", "api.github.com"]
+          }
+        }
+      }
+    }
+  }
+}
+
+route_tables = {
+  jumpbox-egress = {
+    name               = "rt-nimbus-jumpbox-cin"
+    resource_group_key = "hub"
+    subnet_keys        = ["hub/snet-jumpbox"]
+    routes = {
+      default-to-firewall = {
+        address_prefix = "0.0.0.0/0"
+        next_hop_type  = "VirtualAppliance"
+        firewall_key   = "hub"
+      }
+    }
   }
 }

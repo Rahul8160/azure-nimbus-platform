@@ -247,3 +247,41 @@ module "vm" {
   }
   tags = local.common_tags
 }
+
+
+# ---------- Azure Firewall (hub), switched by var.enable_firewall ----------
+module "firewall" {
+  source = "../../modules/firewall"
+
+  firewalls = {
+    for k, v in var.firewalls : k => merge(v, {
+      resource_group_name  = module.resource_groups.names[v.resource_group_key]
+      location             = module.resource_groups.locations[v.resource_group_key]
+      firewall_subnet_id   = module.network.subnet_ids["${v.vnet_key}/AzureFirewallSubnet"]
+      management_subnet_id = module.network.subnet_ids["${v.vnet_key}/AzureFirewallManagementSubnet"]
+    }) if var.enable_firewall
+  }
+  tags = local.common_tags
+}
+
+# ---------- Route tables: send a subnet's internet traffic to the firewall ----------
+module "route_table" {
+  source = "../../modules/route_table"
+
+  route_tables = {
+    for k, v in var.route_tables : k => {
+      name                = v.name
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      subnet_ids          = { for sk in v.subnet_keys : sk => module.network.subnet_ids[sk] }
+      routes = {
+        for rk, r in v.routes : rk => {
+          address_prefix         = r.address_prefix
+          next_hop_type          = r.next_hop_type
+          next_hop_in_ip_address = try(module.firewall.private_ips[r.firewall_key], null)
+        }
+      }
+    } if var.enable_firewall
+  }
+  tags = local.common_tags
+}

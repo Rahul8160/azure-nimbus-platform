@@ -31,7 +31,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
     public_key = each.value.ssh_public_key
   }
 
-  
+
   # The VM's own Entra ID identity (used for az login --identity)
   identity {
     type = "SystemAssigned"

@@ -115,3 +115,21 @@ variable "virtual_machines" {
   type    = any
   default = {}
 }
+
+
+# ---------- Cost switches: expensive components are off unless explicitly enabled ----------
+variable "enable_firewall" {
+  description = "Deploy Azure Firewall and route the jumpbox subnet through it (~INR 35/hour)"
+  type        = bool
+  default     = false
+}
+
+variable "firewalls" {
+  type    = any
+  default = {}
+}
+
+variable "route_tables" {
+  type    = any
+  default = {}
+}

@@ -72,3 +72,12 @@ output "workload_identity_principal_ids" {
   description = "Object IDs: used to create the SQL users"
   value       = module.workload_identity.principal_ids
 }
+
+
+output "firewall_private_ips" {
+  value = module.firewall.private_ips
+}
+
+output "firewall_public_ips" {
+  value = module.firewall.public_ips
+}
