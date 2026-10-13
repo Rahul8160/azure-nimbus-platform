@@ -7,6 +7,17 @@ locals {
   }
 }
 
+
+# DR entries join the normal maps only when enable_dr = true.
+# The existing modules then create them like any other entry.
+locals {
+  all_resource_groups   = merge(var.resource_groups, { for k, v in var.dr_resource_groups : k => v if var.enable_dr })
+  all_vnets             = merge(var.vnets, { for k, v in var.dr_vnets : k => v if var.enable_dr })
+  all_peerings          = merge(var.peerings, { for k, v in var.dr_peerings : k => v if var.enable_dr })
+  all_sql_servers       = merge(var.sql_servers, { for k, v in var.dr_sql_servers : k => v if var.enable_dr })
+  all_private_endpoints = merge(var.private_endpoints, { for k, v in var.dr_private_endpoints : k => v if var.enable_dr })
+}
+
 module "resource_groups" {
   source = "../../modules/resource_group"
 
@@ -124,6 +135,7 @@ module "cosmos" {
     for k, v in var.cosmos_accounts : k => merge(v, {
       resource_group_name = module.resource_groups.names[v.resource_group_key]
       location            = module.resource_groups.locations[v.resource_group_key]
+      secondary_locations = var.enable_dr ? try(v.dr_locations, []) : []
     })
   }
   tags = local.common_tags
@@ -304,6 +316,22 @@ module "vpn_gateway" {
       gateway_subnet_id   = module.network.subnet_ids["${v.vnet_key}/GatewaySubnet"]
       tenant_id           = data.azurerm_client_config.current.tenant_id
     }) if var.enable_vpn
+  }
+  tags = local.common_tags
+}
+
+
+# ---------- DR: SQL failover group, switched by var.enable_dr ----------
+module "sql_failover_group" {
+  source = "../../modules/sql_failover_group"
+
+  failover_groups = {
+    for k, v in var.sql_failover_groups : k => {
+      name                = v.name
+      primary_server_id   = module.sql.server_ids[v.primary_key]
+      secondary_server_id = module.sql.server_ids[v.secondary_key]
+      database_ids        = [for d in v.database_keys : module.sql.database_ids[d]]
+    } if var.enable_dr
   }
   tags = local.common_tags
 }

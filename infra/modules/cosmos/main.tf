@@ -41,9 +41,21 @@ resource "azurerm_cosmosdb_account" "account" {
     consistency_level = each.value.consistency_level
   }
 
+  automatic_failover_enabled = length(each.value.secondary_locations) > 0
+
+  # Primary region
   geo_location {
     location          = each.value.location
-    failover_priority = 0 # primary region; Day 5 adds South India as priority 1
+    failover_priority = 0
+  }
+
+  # DR regions: priority 1, 2, ... in list order
+  dynamic "geo_location" {
+    for_each = each.value.secondary_locations
+    content {
+      location          = geo_location.value
+      failover_priority = geo_location.key + 1
+    }
   }
 }
 

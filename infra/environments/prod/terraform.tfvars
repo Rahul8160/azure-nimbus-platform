@@ -217,6 +217,7 @@ cosmos_accounts = {
   main = {
     name               = "cosmos-nimbus-f786969" # globally unique, lowercase
     resource_group_key = "workload"
+    dr_locations       = ["southindia"] # used only when enable_dr = true
     databases = {
       nimbus = {
         containers = {
@@ -384,5 +385,88 @@ vpn_gateways = {
     vnet_key             = "hub"
     sku                  = "VpnGw1AZ"
     client_address_space = ["172.16.0.0/24"] # matches the snet-pe NSG rule
+  }
+}
+
+
+# ---------- Disaster recovery: South India (off by default) ----------
+enable_dr = false
+
+dr_resource_groups = {
+  dr = {
+    name     = "rg-nimbus-dr-sin"
+    location = "southindia"
+    tags     = { layer = "dr" }
+  }
+}
+
+dr_vnets = {
+  dr-spoke = {
+    name               = "vnet-nimbus-dr-spoke-sin"
+    resource_group_key = "dr"
+    address_space      = ["10.11.0.0/22"] # no overlap with 10.0/10.1 or the VPN pool
+
+    subnets = {
+      snet-pe = {
+        address_prefixes                  = ["10.11.1.0/27"]
+        private_endpoint_network_policies = "Enabled"
+        create_nsg                        = true
+        nsg_rules = {
+          allow-trusted-inbound = {
+            priority                = 100
+            direction               = "Inbound"
+            access                  = "Allow"
+            protocol                = "Tcp"
+            destination_port_ranges = ["443", "1433"]
+            source_address_prefixes = ["10.1.0.0/24", "10.0.1.0/27", "172.16.0.0/24"]
+          }
+          deny-all-inbound = {
+            priority               = 4096
+            direction              = "Inbound"
+            access                 = "Deny"
+            protocol               = "*"
+            destination_port_range = "*"
+            source_address_prefix  = "*"
+          }
+        }
+      }
+    }
+  }
+}
+
+# Global VNet peering: Central India hub <-> South India spoke
+dr_peerings = {
+  hub-drspoke = {
+    hub_key   = "hub"
+    spoke_key = "dr-spoke"
+  }
+}
+
+# Secondary SQL server: same module as the primary, no databases (the failover group replicates them)
+dr_sql_servers = {
+  dr = {
+    name               = "sql-nimbus-f786969-dr"
+    resource_group_key = "dr"
+    entra_admin_login  = "vm-jumpbox-nimbus-cin"
+    databases          = {}
+  }
+}
+
+sql_failover_groups = {
+  orders = {
+    name          = "fog-nimbus-f786969" # listener: fog-nimbus-f786969.database.windows.net
+    primary_key   = "main"
+    secondary_key = "dr"
+    database_keys = ["main/ordersdb"]
+  }
+}
+
+dr_private_endpoints = {
+  sql-dr = {
+    resource_group_key = "dr"
+    subnet_key         = "dr-spoke/snet-pe"
+    target             = "sql/dr"
+    subresource_names  = ["sqlServer"]
+    dns_zone_key       = "sql"
   }
 }

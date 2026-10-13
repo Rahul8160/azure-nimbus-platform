@@ -6,6 +6,7 @@ variable "accounts" {
     location            = string
     free_tier_enabled   = optional(bool, true) # only ONE free-tier account allowed per subscription
     consistency_level   = optional(string, "Session")
+    secondary_locations = optional(list(string), []) # extra regions for replication + failover
 
     databases = optional(map(object({
       containers = map(object({

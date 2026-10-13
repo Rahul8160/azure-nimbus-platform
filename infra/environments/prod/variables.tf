@@ -145,3 +145,40 @@ variable "vpn_gateways" {
   type    = any
   default = {}
 }
+
+
+variable "enable_dr" {
+  description = "Deploy the South India DR footprint: SQL failover group, Cosmos DB second region, DR network"
+  type        = bool
+  default     = false
+}
+
+variable "dr_resource_groups" {
+  type    = any
+  default = {}
+}
+
+variable "dr_vnets" {
+  type    = any
+  default = {}
+}
+
+variable "dr_peerings" {
+  type    = any
+  default = {}
+}
+
+variable "dr_sql_servers" {
+  type    = any
+  default = {}
+}
+
+variable "dr_private_endpoints" {
+  type    = any
+  default = {}
+}
+
+variable "sql_failover_groups" {
+  type    = any
+  default = {}
+}

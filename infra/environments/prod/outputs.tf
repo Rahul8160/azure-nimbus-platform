@@ -86,3 +86,8 @@ output "firewall_public_ips" {
 output "vpn_gateway_public_ips" {
   value = module.vpn_gateway.public_ips
 }
+
+
+output "sql_failover_listeners" {
+  value = module.sql_failover_group.listener_fqdns
+}
