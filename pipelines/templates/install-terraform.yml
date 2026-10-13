@@ -1,0 +1,13 @@
+# Step template: install a pinned Terraform version (same as local development)
+parameters:
+  - name: version
+    type: string
+    default: "1.9.3"
+
+steps:
+  - script: |
+      set -euo pipefail
+      curl -fsSLo /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${{ parameters.version }}/terraform_${{ parameters.version }}_linux_amd64.zip"
+      sudo unzip -o -q /tmp/terraform.zip -d /usr/local/bin
+      terraform version
+    displayName: Install Terraform ${{ parameters.version }}

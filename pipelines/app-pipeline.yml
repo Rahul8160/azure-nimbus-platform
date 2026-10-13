@@ -1,0 +1,119 @@
+# App pipeline: test -> build & scan -> (deploy=true) push + GitOps release
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - app/*
+      - helm/*
+      - deploy/*
+      - pipelines/app-pipeline.yml
+      - pipelines/templates/build-service.yml
+
+parameters:
+  - name: deploy
+    displayName: Push images to ACR and release via GitOps
+    type: boolean
+    default: false
+
+variables:
+  acrName: acrnimbusf78654
+  azureServiceConnection: sc-nimbus-azure # workload identity federation service connection
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  # ---------------- Test ----------------
+  - stage: Test
+    jobs:
+      - job: unit_tests
+        displayName: Unit tests
+        strategy:
+          matrix:
+            orders:
+              service: orders-service
+            inventory:
+              service: inventory-service
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.12"
+          - script: sudo apt-get update -qq && sudo apt-get install -y -qq unixodbc
+            displayName: Install ODBC runtime (pyodbc needs it to import)
+            condition: eq(variables['service'], 'orders-service')
+          - script: |
+              set -euo pipefail
+              pip install -q -r requirements.txt -r requirements-dev.txt
+              python -m pytest -v --junitxml=$(Agent.TempDirectory)/test-results.xml
+            displayName: pytest
+            workingDirectory: app/$(service)
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: $(Agent.TempDirectory)/test-results.xml
+              testRunTitle: Unit tests - $(service)
+
+      - job: chart
+        displayName: Helm lint & chart security scan
+        steps:
+          - script: |
+              set -euo pipefail
+              helm lint helm/microservice -f deploy/values-orders.yaml
+              helm lint helm/microservice -f deploy/values-inventory.yaml
+            displayName: helm lint
+          - script: |
+              pip install -q checkov
+              helm template orders helm/microservice -f deploy/values-orders.yaml > $(Agent.TempDirectory)/orders.yaml
+              checkov -f $(Agent.TempDirectory)/orders.yaml --framework kubernetes --soft-fail \
+                -o cli -o junitxml --output-file-path console,$(Agent.TempDirectory)/checkov
+            displayName: Checkov on rendered manifests (report only)
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: $(Agent.TempDirectory)/checkov/results_junitxml.xml
+              testRunTitle: Checkov - Kubernetes
+
+  # ---------------- Build & scan ----------------
+  - stage: Build
+    dependsOn: Test
+    jobs:
+      - template: templates/build-service.yml
+        parameters:
+          service: orders-service
+          acrName: ${{ variables.acrName }}
+          azureServiceConnection: ${{ variables.azureServiceConnection }}
+          deploy: ${{ parameters.deploy }}
+      - template: templates/build-service.yml
+        parameters:
+          service: inventory-service
+          acrName: ${{ variables.acrName }}
+          azureServiceConnection: ${{ variables.azureServiceConnection }}
+          deploy: ${{ parameters.deploy }}
+
+  # ---------------- Release (GitOps) ----------------
+  - ${{ if eq(parameters.deploy, true) }}:
+      - stage: Release
+        dependsOn: Build
+        jobs:
+          - deployment: gitops_release
+            displayName: Bump image tags in Git (Argo CD deploys)
+            environment: prod # manual approval configured on this environment
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - checkout: self
+                      persistCredentials: true # lets the job push back to Azure Repos
+                    - script: |
+                        set -euo pipefail
+                        TAG="${BUILD_SOURCEVERSION:0:7}"
+                        for f in deploy/values-orders.yaml deploy/values-inventory.yaml; do
+                          sed -i -E "s/^(  tag: ).*/\1\"$TAG\"/" "$f"
+                        done
+                        git config user.email "pipeline@nimbus.local"
+                        git config user.name "Azure Pipelines"
+                        git add deploy/
+                        git commit -m "Release $TAG [skip ci]"   # [skip ci] avoids triggering itself
+                        git push origin HEAD:main
+                      displayName: Update image tags

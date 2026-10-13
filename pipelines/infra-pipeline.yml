@@ -1,0 +1,124 @@
+# Infra pipeline: validate + scan on every push; plan -> approval -> apply when deploy=true
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - infra/*
+      - pipelines/infra-pipeline.yml
+      - pipelines/templates/install-terraform.yml
+
+parameters:
+  - name: deploy
+    displayName: Run terraform plan and apply (needs an active subscription)
+    type: boolean
+    default: false
+
+variables:
+  tfWorkingDir: infra/environments/prod
+  azureServiceConnection: sc-nimbus-azure
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  # ---------------- Validate ----------------
+  - stage: Validate
+    jobs:
+      - job: terraform
+        displayName: Terraform fmt & validate
+        steps:
+          - template: templates/install-terraform.yml
+          - script: terraform fmt -check -recursive -diff infra
+            displayName: Format check
+          - script: |
+              set -euo pipefail
+              terraform init -backend=false -input=false
+              terraform validate
+            displayName: Init (no backend) & validate
+            workingDirectory: $(tfWorkingDir)
+
+      - job: checkov
+        displayName: Checkov IaC security scan
+        steps:
+          - script: |
+              pip install -q checkov
+              checkov -d infra --framework terraform --soft-fail \
+                -o cli -o junitxml --output-file-path console,$(Agent.TempDirectory)/checkov
+            displayName: Checkov (report only)
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: $(Agent.TempDirectory)/checkov/results_junitxml.xml
+              testRunTitle: Checkov - Terraform
+
+  # ---------------- Plan & Apply ----------------
+  - ${{ if eq(parameters.deploy, true) }}:
+      - stage: Plan
+        dependsOn: Validate
+        jobs:
+          - job: plan
+            steps:
+              - template: templates/install-terraform.yml
+              # The VM module reads the jumpbox public key from ~/.ssh (stored as a secure file)
+              - task: DownloadSecureFile@1
+                name: sshKey
+                inputs:
+                  secureFile: nimbus_jumpbox.pub
+              - script: mkdir -p ~/.ssh && cp "$(sshKey.secureFilePath)" ~/.ssh/nimbus_jumpbox.pub
+                displayName: Place jumpbox public key
+              - task: AzureCLI@2
+                displayName: terraform plan
+                inputs:
+                  azureSubscription: ${{ variables.azureServiceConnection }}
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  addSpnToEnvironment: true # exposes servicePrincipalId, tenantId, idToken
+                  workingDirectory: $(tfWorkingDir)
+                  inlineScript: |
+                    set -euo pipefail
+                    # Keyless login: Terraform uses the service connection's federated (OIDC) token
+                    export ARM_USE_OIDC=true
+                    export ARM_CLIENT_ID="$servicePrincipalId"
+                    export ARM_TENANT_ID="$tenantId"
+                    export ARM_OIDC_TOKEN="$idToken"
+                    export ARM_SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
+                    terraform init -input=false
+                    terraform plan -input=false -out=tfplan
+              - publish: $(tfWorkingDir)/tfplan
+                artifact: tfplan
+
+      - stage: Apply
+        dependsOn: Plan
+        jobs:
+          - deployment: apply
+            environment: prod # manual approval configured on this environment
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - checkout: self
+                    - template: templates/install-terraform.yml
+                    - task: DownloadSecureFile@1
+                      name: sshKey
+                      inputs:
+                        secureFile: nimbus_jumpbox.pub
+                    - script: mkdir -p ~/.ssh && cp "$(sshKey.secureFilePath)" ~/.ssh/nimbus_jumpbox.pub
+                      displayName: Place jumpbox public key
+                    - task: AzureCLI@2
+                      displayName: terraform apply (approved plan)
+                      inputs:
+                        azureSubscription: ${{ variables.azureServiceConnection }}
+                        scriptType: bash
+                        scriptLocation: inlineScript
+                        addSpnToEnvironment: true
+                        workingDirectory: $(tfWorkingDir)
+                        inlineScript: |
+                          set -euo pipefail
+                          export ARM_USE_OIDC=true
+                          export ARM_CLIENT_ID="$servicePrincipalId"
+                          export ARM_TENANT_ID="$tenantId"
+                          export ARM_OIDC_TOKEN="$idToken"
+                          export ARM_SUBSCRIPTION_ID="$(az account show --query id -o tsv)"
+                          terraform init -input=false
+                          terraform apply -input=false "$(Pipeline.Workspace)/tfplan/tfplan"

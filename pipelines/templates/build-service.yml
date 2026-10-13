@@ -1,0 +1,43 @@
+# Job template: build, scan and (optionally) push one microservice image
+parameters:
+  - name: service
+    type: string
+  - name: acrName
+    type: string
+  - name: azureServiceConnection
+    type: string
+  - name: deploy
+    type: boolean
+    default: false
+
+jobs:
+  - job: build_${{ replace(parameters.service, '-', '_') }}
+    displayName: Build & scan ${{ parameters.service }}
+    steps:
+      - script: |
+          set -euo pipefail
+          TAG="${BUILD_SOURCEVERSION:0:7}"          # short commit ID, same tagging as local pushes
+          IMAGE="${{ parameters.acrName }}.azurecr.io/${{ parameters.service }}:$TAG"
+          echo "##vso[task.setvariable variable=image]$IMAGE"
+          docker build -t "$IMAGE" app/${{ parameters.service }}
+        displayName: Docker build
+
+      - script: |
+          set -euo pipefail
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          # Fail the build on CRITICAL vulnerabilities that already have a fix available
+          trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --no-progress "$(image)"
+          # Full HIGH+CRITICAL report for visibility (does not fail the build)
+          trivy image --exit-code 0 --severity HIGH,CRITICAL --no-progress "$(image)"
+        displayName: Trivy image scan
+
+      - ${{ if eq(parameters.deploy, true) }}:
+          - task: AzureCLI@2
+            displayName: Push to ACR
+            inputs:
+              azureSubscription: ${{ parameters.azureServiceConnection }}
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr login -n ${{ parameters.acrName }}
+                docker push "$(image)"
