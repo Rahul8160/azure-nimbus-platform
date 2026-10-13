@@ -1,0 +1,5 @@
+# Verified false positives (reviewed 2026-10-13):
+#  - cosmos/main.tf: a code comment containing the word Key, not a credential
+#  - docker-compose.yml: Microsoft public LOCAL EMULATOR key (cannot access Azure)
+44fc61f6db2b43830bf3966971075dbb6b905dd1:infra/modules/cosmos/main.tf:generic-api-key:14
+64e58b443378badc81c1eca4d213d81bc9d14a99:app/docker-compose.yml:generic-api-key:70
