@@ -81,3 +81,8 @@ output "firewall_private_ips" {
 output "firewall_public_ips" {
   value = module.firewall.public_ips
 }
+
+
+output "vpn_gateway_public_ips" {
+  value = module.vpn_gateway.public_ips
+}

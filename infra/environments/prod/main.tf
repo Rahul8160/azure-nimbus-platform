@@ -27,8 +27,14 @@ module "network" {
     })
   }
 
-  peerings = var.peerings
-  tags     = local.common_tags
+  # The spoke uses the hub's VPN gateway only when it exists. Reading the gateway IDs
+  # also makes Terraform create the gateway BEFORE updating the peering.
+  peerings = {
+    for k, v in var.peerings : k => merge(v, {
+      use_hub_gateway = contains(keys(module.vpn_gateway.ids), v.hub_key)
+    })
+  }
+  tags = local.common_tags
 }
 
 
@@ -282,6 +288,22 @@ module "route_table" {
         }
       }
     } if var.enable_firewall
+  }
+  tags = local.common_tags
+}
+
+
+# ---------- Point-to-site VPN (hub), switched by var.enable_vpn ----------
+module "vpn_gateway" {
+  source = "../../modules/vpn_gateway"
+
+  gateways = {
+    for k, v in var.vpn_gateways : k => merge(v, {
+      resource_group_name = module.resource_groups.names[v.resource_group_key]
+      location            = module.resource_groups.locations[v.resource_group_key]
+      gateway_subnet_id   = module.network.subnet_ids["${v.vnet_key}/GatewaySubnet"]
+      tenant_id           = data.azurerm_client_config.current.tenant_id
+    }) if var.enable_vpn
   }
   tags = local.common_tags
 }

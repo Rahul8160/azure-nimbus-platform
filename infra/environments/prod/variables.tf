@@ -133,3 +133,15 @@ variable "route_tables" {
   type    = any
   default = {}
 }
+
+
+variable "enable_vpn" {
+  description = "Deploy the point-to-site VPN gateway (~INR 16/hour) and let the spoke use it via peering"
+  type        = bool
+  default     = false
+}
+
+variable "vpn_gateways" {
+  type    = any
+  default = {}
+}

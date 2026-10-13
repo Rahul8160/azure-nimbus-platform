@@ -104,9 +104,9 @@ vnets = {
 # ---------- Peering ----------
 peerings = {
   hub-spoke = {
-    hub_key         = "hub"
-    spoke_key       = "spoke"
-    use_hub_gateway = false # set to true on Day 3 after the VPN gateway exists
+    hub_key   = "hub"
+    spoke_key = "spoke"
+    # use_hub_gateway = false # set to true on Day 3 after the VPN gateway exists
   }
 }
 
@@ -370,5 +370,19 @@ route_tables = {
         firewall_key   = "hub"
       }
     }
+  }
+}
+
+
+# ---------- Point-to-site VPN (off by default: set true for a test session) ----------
+enable_vpn = false
+
+vpn_gateways = {
+  hub = {
+    name                 = "vgw-nimbus-hub-cin"
+    resource_group_key   = "hub"
+    vnet_key             = "hub"
+    sku                  = "VpnGw1AZ"
+    client_address_space = ["172.16.0.0/24"] # matches the snet-pe NSG rule
   }
 }
