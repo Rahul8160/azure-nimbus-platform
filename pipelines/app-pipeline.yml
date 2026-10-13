@@ -21,7 +21,7 @@ variables:
   azureServiceConnection: sc-nimbus-azure # workload identity federation service connection
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-24.04 # pinned: "latest" moves to Ubuntu 26 on 2026-10-19
 
 stages:
   # ---------------- Test ----------------

@@ -19,7 +19,7 @@ variables:
   azureServiceConnection: sc-nimbus-azure
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-24.04 # pinned: "latest" moves to Ubuntu 26 on 2026-10-19
 
 stages:
   # ---------------- Validate ----------------
