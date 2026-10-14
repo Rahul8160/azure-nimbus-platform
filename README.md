@@ -109,17 +109,6 @@ consumes it and decrements stock in Cosmos DB. Verified in Azure: stock **50 →
 Infrastructure was deployed with the **Terraform CLI** while building; the same flow was then codified into the gated
 pipeline stages.
 
-**Evidence** (screenshots in [`docs/images`](docs/images)):
-
-<!-- Add your screenshots to docs/images/ with these names, or update the paths -->
-
-|                                                                     |                                                          |
-| ------------------------------------------------------------------- | -------------------------------------------------------- |
-| ![End-to-end test](docs/images/e2e-50-to-47.png)                    | ![Argo CD app of apps](docs/images/argocd-root-tree.png) |
-| End-to-end order flow through the public endpoint                   | Argo CD app-of-apps, all Healthy / Synced                |
-| ![orders-service resources](docs/images/argocd-orders-tree.png)     | ![Cost analysis](docs/images/cost-analysis.png)          |
-| One Helm release: Service, ServiceAccount, Deployment, HPA, Ingress | Total platform cost: ₹909                                |
-
 ---
 
 ## The application
